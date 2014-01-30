@@ -6,8 +6,8 @@ import java.security.MessageDigest;
 
 public class BackupItem {
 
-	public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	 
+	//public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";	 
 	public static final int BASE = ALPHABET.length();
 	
 	private DBConnector con;

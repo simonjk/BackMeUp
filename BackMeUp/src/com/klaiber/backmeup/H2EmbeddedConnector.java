@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -96,10 +97,33 @@ public class H2EmbeddedConnector implements DBConnector {
 	}
 
 	@Override
-	public boolean getRun(int run) {
-		// TODO Auto-generated method stub
-		return false;
+	public Run getRun(int run) {		
+		Run result = null;
+		try {
+			PreparedStatement stmt = con.prepareStatement("Select * from runs where id = ?");
+			stmt.setInt(1, run);
+			ResultSet rs = stmt.executeQuery();			
+			if (rs.next()) {
+			    int id = rs.getInt("ID");
+				int backupgroup_id = rs.getInt("BACKUPGROUP_ID");
+			    Date started = rs.getTimestamp("time_started");
+			    if (rs.wasNull()) started = null;
+			    Date finished = rs.getTimestamp("time_finished");
+			    if (rs.wasNull()) finished = null;
+			    Boolean success = rs.getBoolean("sucessful");
+			    result = new Run(id,backupgroup_id,started,finished,success);
+			}
+			rs.close();
+			stmt.close();
+
+			
+		} catch (Exception ex) {
+			return null;
+		}
+		
+		return result;
 	}
+
 
 	@Override
 	public Map<Integer, Run> getAllRuns(int group) {
@@ -215,8 +239,41 @@ public class H2EmbeddedConnector implements DBConnector {
 
 	@Override
 	public long matchHashes(int run) {
-		// TODO Auto-generated method stub
-		return 0;
+		Run r = this.getRun(run);
+		
+		long result = 0;
+		try {
+					
+			
+			PreparedStatement stmt = con.prepareStatement("Select b.id as bid, i.id as iid from " +
+					"items i" +
+					"inner join backupitems b" +
+					"on i.hash = b.hash" +
+					"where i.backupgroup_id = ?");
+			stmt.setInt(1, r.getBackupgroup());
+			ResultSet rs = stmt.executeQuery();
+			
+			PreparedStatement stmt2 = con.prepareStatement("UPDATE backupitems SET ITEM_ID = ? WHERE id = ?");
+			
+			while (rs.next()){
+				
+				stmt2.setInt(1, rs.getInt(2));
+				stmt2.setInt(2, rs.getInt(1));
+				result = result + stmt2.executeUpdate();
+				stmt2.clearParameters();
+			}
+			
+			stmt2.close();
+			rs.close();
+			stmt.close();
+			
+		} catch ( Exception e) {
+			return -1;
+		}
+		return result;
+		
+
+
 	}
 
 	@Override

@@ -24,7 +24,7 @@ public class DirectoryCrawlerWorker implements Runnable {
 						connect.addBackupItem(run, c.getAbsolutePath(), c.length(), c.lastModified());
 						added++;
 					} else {						
-						control.addDir(c.getAbsolutePath());
+						if (recur) control.addDir(c.getAbsolutePath());
 					}
 				}
 			}

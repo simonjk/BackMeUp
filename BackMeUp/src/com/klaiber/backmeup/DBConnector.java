@@ -17,7 +17,7 @@ public interface DBConnector {
 	
 	public int createRun(int group);
 	
-	public boolean getRun(int run);
+	public Run getRun(int run);
 	
 	public Map<Integer,Run> getAllRuns(int group);
 	
