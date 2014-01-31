@@ -244,12 +244,12 @@ public class H2EmbeddedConnector implements DBConnector {
 		long result = 0;
 		try {
 					
-			
+			//search for matching hashes and add Item_id if found
 			PreparedStatement stmt = con.prepareStatement("Select b.id as bid, i.id as iid from " +
 					"items i" +
 					"inner join backupitems b" +
 					"on i.hash = b.hash" +
-					"where i.backupgroup_id = ?");
+					"where i.backupgroup_id = ? and b.ITEM_ID is null ");
 			stmt.setInt(1, r.getBackupgroup());
 			ResultSet rs = stmt.executeQuery();
 			
@@ -266,6 +266,8 @@ public class H2EmbeddedConnector implements DBConnector {
 			stmt2.close();
 			rs.close();
 			stmt.close();
+			
+			
 			
 		} catch ( Exception e) {
 			return -1;
