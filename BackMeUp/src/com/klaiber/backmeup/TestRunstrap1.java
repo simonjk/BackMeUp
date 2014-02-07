@@ -29,6 +29,9 @@ public class TestRunstrap1 {
 				bi.generateHash();
 				log.info("Hash created [" + bi.getHash() + "]");
 			}
+			log.info("Matching Hashes for Run ["+run+"]");
+			long matched = con.matchHashes(run);
+			log.info("Matched ["+matched+"] Hashes for Run ["+run+"]");
 			
 			log.info("Test");
 			//int run=67; // Test PLEASE DELETE

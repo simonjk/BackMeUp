@@ -242,15 +242,44 @@ public class H2EmbeddedConnector implements DBConnector {
 		Run r = this.getRun(run);
 		
 		long result = 0;
+		result = matchOnHash(r, result);
+		if (result < 0) return result;
+		
+		try {
+			PreparedStatement stmt = con.prepareStatement("Insert into items(backupgroup_id, hash) " +
+					"SELECT ? as backupgroup_id, hash from backupitems " +
+					"where run_id = ? and ITEM_ID is null " );
+			stmt.setInt(1, r.getBackupgroup());
+			stmt.setInt(2, r.getId());
+			
+			result = result + stmt.executeUpdate();
+			
+			stmt.close();
+			
+			
+			
+		} catch ( Exception e) {
+			e.printStackTrace();
+			return -1;
+		}	
+		
+		result = matchOnHash(r, result);
+		return result; 
+		
+
+
+	}
+
+	private long matchOnHash(Run run, long result) {
 		try {
 					
 			//search for matching hashes and add Item_id if found
 			PreparedStatement stmt = con.prepareStatement("Select b.id as bid, i.id as iid from " +
-					"items i" +
-					"inner join backupitems b" +
-					"on i.hash = b.hash" +
+					"items i " +
+					"inner join backupitems b " +
+					"on i.hash = b.hash " +
 					"where i.backupgroup_id = ? and b.ITEM_ID is null ");
-			stmt.setInt(1, r.getBackupgroup());
+			stmt.setInt(1, run.getBackupgroup());
 			ResultSet rs = stmt.executeQuery();
 			
 			PreparedStatement stmt2 = con.prepareStatement("UPDATE backupitems SET ITEM_ID = ? WHERE id = ?");
@@ -270,12 +299,10 @@ public class H2EmbeddedConnector implements DBConnector {
 			
 			
 		} catch ( Exception e) {
+			e.printStackTrace();
 			return -1;
 		}
 		return result;
-		
-
-
 	}
 
 	@Override
