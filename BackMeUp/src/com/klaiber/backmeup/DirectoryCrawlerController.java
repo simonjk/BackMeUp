@@ -27,7 +27,7 @@ public class DirectoryCrawlerController {
 	public long crawl(String directory, boolean recursive, int run){
 		
 		dirs.add(directory);
-		log.info("Crawling directory ["+directory+"]" );
+		//log.info("Crawling directory ["+directory+"]" );
 		while (dirs.size()>0 || activeThreads > 0)	{
 			if (dirs.size()>0 && maxThreads > activeThreads) {
 				Thread t = new Thread(new DirectoryCrawlerWorker(run, dirs.poll(), recursive, this, connect));
@@ -54,7 +54,7 @@ public class DirectoryCrawlerController {
 	}
 	
 	public synchronized void addDir(String Directory){
-		log.info("Directory ["+Directory+"] added to Crawllist" );
+		//log.info("Directory ["+Directory+"] added to Crawllist" );
 		dirs.add(Directory);
 	}
 }

@@ -7,7 +7,8 @@ import java.security.MessageDigest;
 public class BackupItem {
 
 	//public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";	 
+	public static final String ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	//public static final String ALPHABET = "0123456789ABCDEF";
 	public static final int BASE = ALPHABET.length();
 	
 	private DBConnector con;
@@ -66,9 +67,18 @@ public class BackupItem {
 	public void generateHash() {
 	    String hash = null;
 		
+		hash = generateHashForFile(hash); 
+		
+		
+		this.hash = hash;
+		con.setBackupItemHash(this);
+	}
+
+	public static String generateHashForFile(String filepath) {
+		String hash = null;
 		try{
 	    		MessageDigest md = MessageDigest.getInstance("SHA-256");
-	    		FileInputStream fis = new FileInputStream(this.getPath());
+	    		FileInputStream fis = new FileInputStream(filepath);
 		 
 		        byte[] dataBytes = new byte[1024];
 		 
@@ -94,11 +104,8 @@ public class BackupItem {
 		        
 	} catch (Exception ex) {
 	 //log	
-	} 
-		
-		
-		this.hash = hash;
-		con.setBackupItemHash(this);
+	}
+		return hash;
 	}
 
 	public Integer getDrive1() {

@@ -1,0 +1,59 @@
+package com.klaiber.backmeup;
+
+import static org.junit.Assert.*;
+
+import java.util.Set;
+
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
+import org.junit.Test;
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class CopyFilesTest {
+
+	private static DBConnector con;
+	private static int run1;
+	
+	@BeforeClass
+	public static void setup() {
+		con = new H2EmbeddedConnector();
+		if (con.open("jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'backupdb_testdata_create.ddl'")) {
+			run1 = con.createRun(1);
+			DirectoryCrawlerController dcc = new DirectoryCrawlerController(con, 20);
+			for (String d : con.getDirectories(1)){
+				dcc.crawl(d, true, run1);
+			}
+			con.checkForUnmodifiedFiles(run1);
+			Set<BackupItem> unhashed = con.getUnhashedItems(run1);
+			for(BackupItem bi : unhashed){
+				bi.generateHash();
+			}
+			con.matchHashes(run1);
+			
+		} else {
+			fail("Db could not be Initated");
+		}
+	}
+	
+	@Test
+	public void test01NumOfUnsavedItems() {
+		assertEquals("wrong number of unsaved Items internal", con.getUnsavedItems(run1, false) , 9);
+		assertEquals("wrong number of unsaved Items external", con.getUnsavedItems(run1, true) , 9);
+	}
+	
+	@Test
+	public void test02SetItemSaved() {		
+		assertEquals("wrong inital number of unsaved Items internal", con.getUnsavedItems(run1, false) , 9);
+		assertEquals("wrong inital number of unsaved Items external", con.getUnsavedItems(run1, true) , 9);
+		assertTrue("Set Item saved internal failed",con.setItemSaved(con.getUnsavedItems(run1, false).iterator().next(), 1, false));
+		assertEquals("wrong number of unsaved Items internal after finishing internal", con.getUnsavedItems(run1, false) , 8);
+		assertEquals("wrong number of unsaved Items external after finishing internal", con.getUnsavedItems(run1, true) , 9);
+		assertTrue("Set Item saved external failed",con.setItemSaved(con.getUnsavedItems(run1, true).iterator().next(), 2, true));
+		assertEquals("wrong number of unsaved Items internal after finishing external", con.getUnsavedItems(run1, false) , 8);
+		assertEquals("wrong number of unsaved Items external after finishing external", con.getUnsavedItems(run1, true) , 8);
+		
+	}
+	
+
+}

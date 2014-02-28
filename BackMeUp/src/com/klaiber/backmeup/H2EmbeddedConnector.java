@@ -175,7 +175,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	@Override
 	public synchronized boolean addBackupItem(int run, String path, long size, long modified) {
 		try {
-			log.info("Adding Item ["+path+"] to run ["+run+"] Size:["+size+"] TimeStamp:["+modified+"]" );
+			//log.info("Adding Item ["+path+"] to run ["+run+"] Size:["+size+"] TimeStamp:["+modified+"]" );
 			PreparedStatement stmt = con.prepareStatement("INSERT INTO BACKUPITEMS (RUN_ID, PATH, SIZE, LASTMODIFIED) VALUES (?, ?, ?, ?)");
 			stmt.setInt(1, run);
 			stmt.setString(2,path);
