@@ -5,11 +5,12 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 
 public class BackupItem {
-
+	/* Obsolete
 	//public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	public static final String ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	//public static final String ALPHABET = "0123456789ABCDEF";
 	public static final int BASE = ALPHABET.length();
+	*/
 	
 	private DBConnector con;
 	private int id;
@@ -22,7 +23,7 @@ public class BackupItem {
 	private Integer drive1;
 	private Integer drive2;
 	
-	
+	/* Obsolete and probably buggy
 	public static String fromBase10(BigInteger i) {
 		StringBuilder sb = new StringBuilder("");
 		while (i.compareTo(BigInteger.ZERO) == 1) {
@@ -36,6 +37,7 @@ public class BackupItem {
 		sb.append(ALPHABET.charAt(rem));
 		return i.divide(BigInteger.valueOf(BASE));
 		}
+	*/
 	
 	public BackupItem(DBConnector dbConnector, int id, int run, Integer item_id, String path,
 			String hash, long size, long lastModified, Integer drive1,
@@ -94,13 +96,7 @@ public class BackupItem {
 		          sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
 		        }
 		        fis.close();
-		        BigInteger biHash = new BigInteger(sb.toString(), 16);
-		        hash = fromBase10(biHash);
-		        
-
-
-		    	 
-		        
+		        hash = new BigInteger(sb.toString(), 16).toString(36);		                
 		        
 	} catch (Exception ex) {
 	 //log	
