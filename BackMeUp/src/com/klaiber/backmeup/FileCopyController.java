@@ -2,10 +2,20 @@ package com.klaiber.backmeup;
 
 public class FileCopyController implements FileCopyStatusReciever {
 
+	
+	
 	@Override
-	public synchronized void returnFinished(int StatusCode) {
+	public void returnFinished(FileCopyWorker fcw, int StatusCode) {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void requestAction(FileCopyWorker fcw, int StatusCode) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 
 }

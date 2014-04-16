@@ -67,9 +67,7 @@ public class BackupItem {
 	}
 
 	public void generateHash() {
-	    String hash = null;
-		
-		hash = generateHashForFile(hash); 
+	    String hash =  generateHashForFile(this.path); 
 		
 		
 		this.hash = hash;
