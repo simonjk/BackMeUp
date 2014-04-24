@@ -307,15 +307,60 @@ public class H2EmbeddedConnector implements DBConnector {
 
 	@Override
 	public Set<BackupItem> getUnsavedItems(int run, boolean external) {
-		// TODO Auto-generated method stub
-		return null;
+		Set<BackupItem> result = new HashSet<BackupItem>();
+		try {
+			Run r = getRun(run);
+			PreparedStatement stmt = con.prepareStatement("Select min(b.id), min(b.run_id), b.item_ID, min(b.path), "+
+														  "i.hash, min(b.size), min(b.lastmodified), i.drive1_id, "+
+														  "i.drive2_id from Backupitems b inner join items i "+
+														  "on (b.item_id = i.id) where backupgroup_id = "
+														  + "? and Drive"+(external?2:1)+"_ID is null "+
+														  "group by i.hash order by size desc");
+			stmt.setInt(1, r.getBackupgroup());
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+			    int id = rs.getInt(1);
+				int run_id = rs.getInt(2);
+			    Integer item_id = rs.getInt(3);
+			    if (rs.wasNull()) item_id = null;
+			    String path = rs.getString(4);
+			    String hash = rs.getString(5);
+			    long size = rs.getLong(6);
+			    long lastModified = rs.getLong(7);
+			    Integer drive1 = rs.getInt(8);
+			    if (rs.wasNull()) drive1 = null;
+			    Integer drive2 = rs.getInt(9);
+			    if (rs.wasNull()) drive2 = null;
+			    BackupItem bi = new BackupItem(this,id,run_id,item_id,path,hash,size,lastModified,drive1,drive2);
+			    result.add(bi);
+			}
+			rs.close();
+			stmt.close();
+
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
+		
+		return result;
 	}
 
 	@Override
 	public boolean setItemSaved(BackupItem item, int drive, boolean external) {
-		// TODO Auto-generated method stub
-		return false;
+		try {
+			PreparedStatement stmt = con.prepareStatement("UPDATE items SET Drive"+(external?2:1)+"_ID = ? WHERE id = ?");
+			stmt.setInt(1, drive);
+			stmt.setInt(2,item.getItem_id());
+			int result = stmt.executeUpdate();
+			if (result != 1) return false;
+		} catch (Exception ex) {
+			return false;
+		}
+		
+		return true;
 	}
+	
 
 	@Override
 	public Set<BackupItem> getUnhashedItems(int run) {

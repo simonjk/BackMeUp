@@ -38,20 +38,20 @@ public class CopyFilesTest {
 	
 	@Test
 	public void test01NumOfUnsavedItems() {
-		assertEquals("wrong number of unsaved Items internal", con.getUnsavedItems(run1, false) , 9);
-		assertEquals("wrong number of unsaved Items external", con.getUnsavedItems(run1, true) , 9);
+		assertEquals("wrong number of unsaved Items internal", 11 , con.getUnsavedItems(run1, false).size());
+		assertEquals("wrong number of unsaved Items external", 11 , con.getUnsavedItems(run1, true).size());
 	}
 	
 	@Test
 	public void test02SetItemSaved() {		
-		assertEquals("wrong inital number of unsaved Items internal", con.getUnsavedItems(run1, false) , 9);
-		assertEquals("wrong inital number of unsaved Items external", con.getUnsavedItems(run1, true) , 9);
+		assertEquals("wrong inital number of unsaved Items internal", 11 , con.getUnsavedItems(run1, false).size());
+		assertEquals("wrong inital number of unsaved Items external", 11 , con.getUnsavedItems(run1, true).size());
 		assertTrue("Set Item saved internal failed",con.setItemSaved(con.getUnsavedItems(run1, false).iterator().next(), 1, false));
-		assertEquals("wrong number of unsaved Items internal after finishing internal", con.getUnsavedItems(run1, false) , 8);
-		assertEquals("wrong number of unsaved Items external after finishing internal", con.getUnsavedItems(run1, true) , 9);
+		assertEquals("wrong number of unsaved Items internal after finishing internal", 10, con.getUnsavedItems(run1, false).size());
+		assertEquals("wrong number of unsaved Items external after finishing internal", 11 , con.getUnsavedItems(run1, true).size());
 		assertTrue("Set Item saved external failed",con.setItemSaved(con.getUnsavedItems(run1, true).iterator().next(), 2, true));
-		assertEquals("wrong number of unsaved Items internal after finishing external", con.getUnsavedItems(run1, false) , 8);
-		assertEquals("wrong number of unsaved Items external after finishing external", con.getUnsavedItems(run1, true) , 8);
+		assertEquals("wrong number of unsaved Items internal after finishing external", 10,  con.getUnsavedItems(run1, false).size() );
+		assertEquals("wrong number of unsaved Items external after finishing external", 10, con.getUnsavedItems(run1, true).size() );
 		
 	}
 	
