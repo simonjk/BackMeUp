@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -307,7 +308,7 @@ public class H2EmbeddedConnector implements DBConnector {
 
 	@Override
 	public Set<BackupItem> getUnsavedItems(int run, boolean external) {
-		Set<BackupItem> result = new HashSet<BackupItem>();
+		Set<BackupItem> result = new LinkedHashSet<BackupItem>();
 		try {
 			Run r = getRun(run);
 			PreparedStatement stmt = con.prepareStatement("Select min(b.id), min(b.run_id), b.item_ID, min(b.path), "+
@@ -346,6 +347,24 @@ public class H2EmbeddedConnector implements DBConnector {
 		return result;
 	}
 
+	@Override
+	public boolean setItemSaved(BackupItem item, String driveName, boolean external) {
+		try {
+			PreparedStatement stmt = con.prepareStatement("Select id from drives where name = ?");
+			stmt.setString(1, driveName);
+			ResultSet rs = stmt.executeQuery();			
+			if (rs.next()) {
+				return setItemSaved(item, rs.getInt("id"), external);
+			} else {
+				return false;
+			}
+		} catch (Exception ex) {
+			return false;
+		} 
+		
+		
+	}
+	
 	@Override
 	public boolean setItemSaved(BackupItem item, int drive, boolean external) {
 		try {
@@ -405,6 +424,46 @@ public class H2EmbeddedConnector implements DBConnector {
 		}
 		
 		return true;
+	}
+
+	@Override
+	public Set<String> getUsableDrives(int group, boolean external) {
+		Set<String> result = new LinkedHashSet<String>();
+		try {			
+			PreparedStatement stmt = con.prepareStatement("Select Name from DRIVES d inner join DRIVES_GROUPS dg on (d.id = dg.drive_id) "+
+														"where dg.group_id = ? and d.drivefull = false and d.extern = ? order by id asc");
+			
+			stmt.setInt(1, group);
+			stmt.setBoolean(2, external);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+			    String driveName = rs.getString(1);
+			    result.add(driveName);				
+			}
+			rs.close();
+			stmt.close();
+
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
+		
+		return result;
+	}
+
+	@Override
+	public int setDriveFull(String driveName) {
+		try {
+			PreparedStatement stmt = con.prepareStatement("UPDATE drives SET drivefull = true WHERE name = ?");
+			stmt.setString(1, driveName);
+			int result = stmt.executeUpdate();
+			if (result != 1) return -1;
+		} catch (Exception ex) {
+			return -1;
+		}
+		
+		return 0;
 	}
 
 }

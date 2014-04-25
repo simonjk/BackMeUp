@@ -13,6 +13,10 @@ public interface DBConnector {
 	
 	public Set<String> getDirectories(int group);
 	
+	public Set<String> getUsableDrives(int group, boolean external);
+	
+	public int setDriveFull(String driveName);
+	
 	public Map<Integer,String> getGroups();
 	
 	public int createRun(int group);
@@ -42,6 +46,8 @@ public interface DBConnector {
 	public boolean setBackupItemHash(BackupItem backupItem);
 	
 	public Set<BackupItem> getUnsavedItems(int run, boolean external);
+	
+	public boolean setItemSaved(BackupItem item, String driveName, boolean external);
 	
 	public boolean setItemSaved(BackupItem item, int drive, boolean external);
 	
