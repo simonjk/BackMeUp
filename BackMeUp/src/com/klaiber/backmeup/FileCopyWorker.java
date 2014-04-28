@@ -3,6 +3,7 @@ package com.klaiber.backmeup;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MaximizeAction;
 
@@ -29,6 +30,9 @@ import org.apache.commons.io.FileUtils;
  */
 
 public class FileCopyWorker implements Runnable {
+	
+	private Logger log = Logger.getLogger("FileCopyWorker");
+	
 	private File src;
 	private File drive;
 	private String driveName;
@@ -121,9 +125,12 @@ public class FileCopyWorker implements Runnable {
 		}
 		
 		//verify tgt file
-		String tgtHash = BackupItem.generateHashForFile(tgt.getAbsolutePath());
+		String tgtHash = BackupItem.generateHashForFile(tgt.getAbsolutePath());		
 		if (!tgtHash.equalsIgnoreCase(hash)){
-			statusReciever.returnFinished(this, 1);
+			log.info("tgt Hash ["+tgtHash+"]" );
+			log.info("src Hash ["+hash+"]" );
+			tgt.delete();
+			statusReciever.returnFinished(this, 1);			
 			return;
 		} else {
 			statusReciever.returnFinished(this, 0);

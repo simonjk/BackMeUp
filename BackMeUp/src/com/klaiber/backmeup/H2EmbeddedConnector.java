@@ -308,18 +308,21 @@ public class H2EmbeddedConnector implements DBConnector {
 
 	@Override
 	public Set<BackupItem> getUnsavedItems(int run, boolean external) {
+		int count = 0;
 		Set<BackupItem> result = new LinkedHashSet<BackupItem>();
 		try {
 			Run r = getRun(run);
-			PreparedStatement stmt = con.prepareStatement("Select min(b.id), min(b.run_id), b.item_ID, min(b.path), "+
+			PreparedStatement stmt = con.prepareStatement("Select min(b.id), max(b.run_id), b.item_ID, min(b.path), "+
 														  "i.hash, min(b.size), min(b.lastmodified), i.drive1_id, "+
 														  "i.drive2_id from Backupitems b inner join items i "+
 														  "on (b.item_id = i.id) where backupgroup_id = "
 														  + "? and Drive"+(external?2:1)+"_ID is null "+
-														  "group by i.hash order by size desc");
+														  "group by i.hash having max(run_id)=? order by size desc");
 			stmt.setInt(1, r.getBackupgroup());
+			stmt.setInt(2, run);
 			ResultSet rs = stmt.executeQuery();
 			while (rs.next()) {
+				count++;
 			    int id = rs.getInt(1);
 				int run_id = rs.getInt(2);
 			    Integer item_id = rs.getInt(3);
@@ -337,6 +340,7 @@ public class H2EmbeddedConnector implements DBConnector {
 			}
 			rs.close();
 			stmt.close();
+			log.info("Num of Files to Backup: ["+count+"]");
 
 			
 		} catch (Exception ex) {
