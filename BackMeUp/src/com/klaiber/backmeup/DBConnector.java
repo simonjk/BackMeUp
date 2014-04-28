@@ -51,5 +51,7 @@ public interface DBConnector {
 	
 	public boolean setItemSaved(BackupItem item, int drive, boolean external);
 	
+	public String getXmlRepresentation(int run);
+	
 
 }

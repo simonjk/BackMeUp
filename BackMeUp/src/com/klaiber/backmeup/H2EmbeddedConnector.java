@@ -160,11 +160,11 @@ public class H2EmbeddedConnector implements DBConnector {
 	public boolean finishRun(int run, boolean success) {
 		
 		try {
-			PreparedStatement stmt = con.prepareStatement("UPDATE RUN SET TIME_FINISHED = ?, SUCESSFUL = ? WHERE ID = ?");
+			PreparedStatement stmt = con.prepareStatement("UPDATE RUNS SET TIME_FINISHED = ?, SUCESSFUL = ? WHERE ID = ?");
 			stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
 			stmt.setBoolean(2, success);
 			stmt.setInt(3, run);
-			if (stmt.executeUpdate() < 1) return false;;			
+			if (stmt.executeUpdate() < 1) return false;			
 			stmt.close();
 		} catch ( Exception e) {
 			return false;
@@ -468,6 +468,49 @@ public class H2EmbeddedConnector implements DBConnector {
 		}
 		
 		return 0;
+	}
+
+	@Override
+	public String getXmlRepresentation(int run) {
+		StringBuffer result = new StringBuffer();
+		Run r = getRun(run);
+		result.append("<backmeup>\n\t<run>\n");
+		result.append("\t\t<backupgroup>"+r.getBackupgroup()+"</backupgroup>\n");
+		result.append("\t\t<started>"+r.getStarted().getTime()+"</started>\n");
+		result.append("\t\t<finished>"+r.getFinished().getTime()+"</finished>\n");
+		if (r.isSuccess()) result.append("\t\t<successful/>\n");
+		
+		try {
+		
+			PreparedStatement stmt = con.prepareStatement("Select b.path, b.hash, b.size, b.lastmodified, d1.name, d2.name "
+															+ "from backupitems b "
+															+ "inner join items i "
+															+ "on (b.item_id = i.id) "
+															+ "inner join drives d1 "
+															+ "on (i.drive1_id = d1.id) "
+															+ "inner join drives d2 "
+															+ "on (i.drive2_id = d2.id) "
+															+ "where b.run_id = ? "
+															+ "order by path");
+			stmt.setInt(1, run);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				result.append("\t\t<item>\n");
+				result.append("\t\t\t<path>"+rs.getString(1)+"</path>\n");
+				result.append("\t\t\t<hash>"+rs.getString(2)+"</hash>\n");
+				result.append("\t\t\t<size>"+rs.getLong(3)+"</size>\n");
+				result.append("\t\t\t<lastmodified>"+rs.getLong(4)+"</lastmodified>\n");
+				result.append("\t\t\t<drive1>"+rs.getString(5)+"</drive1>\n");
+				result.append("\t\t\t<drive2>"+rs.getString(6)+"</drive2>\n");
+				result.append("\t\t</item>\n");
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
+		
+		result.append("\t</run>\n</backmeup>");
+		return result.toString();
 	}
 
 }

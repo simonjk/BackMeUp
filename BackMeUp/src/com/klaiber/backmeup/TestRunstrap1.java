@@ -1,8 +1,12 @@
 package com.klaiber.backmeup;
 
+import java.io.File;
+import java.io.ObjectInputStream.GetField;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.logging.Logger;
+
+import org.apache.commons.io.FileUtils;
 
 public class TestRunstrap1 {
 
@@ -47,7 +51,19 @@ public class TestRunstrap1 {
 			LinkedHashSet<String> externalDrives = new LinkedHashSet<String>(con.getUsableDrives(group, true));
 		
 			FileCopyController fcc = new FileCopyController(con, internalItems, externalItems, internalDrives, externalDrives, internalDrivePath, externalDrivePath, externalOffset, spaceReserve, maxIgnoredSpace);
-			fcc.saveItems();
+			int saveStatus = fcc.saveItems();
+			boolean success = saveStatus==0?true:false;
+			log.info("Finishing run ["+run+"] ["+success+"]");
+			con.finishRun(run, success);
+			String xml = con.getXmlRepresentation(run);
+			System.out.println(xml);
+			Run r = con.getRun(run);
+			try{
+				FileUtils.writeStringToFile(new File(internalDrivePath+"/run_"+r.getFinished().getTime()+".xml"), xml);
+				FileUtils.writeStringToFile(new File(externalDrivePath+"/run_"+r.getFinished().getTime()+".xml"), xml);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			
 		} else {
 			log.severe("Database could not be opened");

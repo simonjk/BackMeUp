@@ -34,6 +34,7 @@ public class FileCopyController implements FileCopyStatusReciever {
 	private String currentInternalDriveName; 
 	private String currentExternalDriveName;
 	private Logger log;
+	private int errorcount = 0;
 	
 	public FileCopyController(DBConnector con, LinkedHashSet<BackupItem> internalItems,
 			LinkedHashSet<BackupItem> externalItems, LinkedHashSet<String> internalDrives,
@@ -54,11 +55,13 @@ public class FileCopyController implements FileCopyStatusReciever {
 	}
 
 	
-	public int saveItems(){
+	public int saveItems(){		
 		int status = 0;
+		errorcount = 0;
 		int internalCount = 0;
 		currentInternalDriveName = InternalDrives.iterator().next();
 		currentExternalDriveName = ExternalDrives.iterator().next();
+		if (externalOffset >= InternalItems.size()) externalOffset = InternalItems.size()-1;
 		while (!stopped && (InternalItems.size()>0 || ExternalItems.size()>0)){
 			if (!internalRunning && InternalItems.size()>0){
 				internalCount++;								
@@ -91,8 +94,14 @@ public class FileCopyController implements FileCopyStatusReciever {
 				ExternalItems.addAll(ExternalSkippedItems);
 				ExternalSkippedItems = new LinkedHashSet<BackupItem>();				
 			}
+	
 		}
-		
+	
+		if (stopped) {
+			status = -1;
+		} else {
+			status = errorcount;
+		}
 		return status;
 	}
 	
@@ -121,6 +130,7 @@ public class FileCopyController implements FileCopyStatusReciever {
 			externalBui = null;
 			skipped = ExternalSkippedItems;
 		} else {
+			errorcount++;
 			stopped = true;
 			log.severe("Unkown Worker returned ["+fcw.getSrc().getAbsolutePath()+"]");
 			return;
@@ -146,6 +156,7 @@ public class FileCopyController implements FileCopyStatusReciever {
 				
 			}
 		} else {
+			errorcount++;
 			log.warning("Error backup ["+fcw.getSrc().getAbsolutePath()+"] to ["+fcw.getDriveName()+"] as ["+(external?"External":"Internal")+"] Status Code:["+statusCode+"]");
 		}
 		
