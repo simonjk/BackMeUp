@@ -1,32 +1,39 @@
 package com.klaiber.backmeup;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.ObjectInputStream.GetField;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import org.apache.commons.io.FileUtils;
 
 public class TestRunstrap1 {
 
+	public static Logger log;
+
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		Logger log = Logger.getLogger("main");
+		log = LogHandler.getLogger();
+	    
 		DBConnector con = new H2EmbeddedConnector();
 		if ( con.open("jdbc:h2:backup;IFEXISTS=TRUE") || con.open("jdbc:h2:backup;INIT=RUNSCRIPT FROM 'backupdb_create.ddl'")){
-			int group = 1;
-			String internalDrivePath = "c:/Temp/drive1/";
-			String externalDrivePath = "c:/Temp/drive2/";
+			int group = 3;
+			String internalDrivePath = "I:/";
+			String externalDrivePath = "H:/";
 			int externalOffset = 3;
 			long spaceReserve = 15728640L;
 			long maxIgnoredSpace = 1572864L;
 			int run = con.createRun(group);
 			log.info("Created Run ["+run+"] for Backupgroup "+ group );					
 			DirectoryCrawlerController dcc = new DirectoryCrawlerController(con, 20);
-			for (String d : con.getDirectories(1)){
+			for (String d : con.getDirectories(group)){
+				//System.out.print(d);
 				dcc.crawl(d, true, run);
 			}
 			long unchanged = con.checkForUnmodifiedFiles(run);
@@ -56,7 +63,7 @@ public class TestRunstrap1 {
 			log.info("Finishing run ["+run+"] ["+success+"]");
 			con.finishRun(run, success);
 			String xml = con.getXmlRepresentation(run);
-			System.out.println(xml);
+			//System.out.println(xml);
 			Run r = con.getRun(run);
 			try{
 				FileUtils.writeStringToFile(new File(internalDrivePath+"/run_"+r.getFinished().getTime()+".xml"), xml);

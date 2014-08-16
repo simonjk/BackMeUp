@@ -51,7 +51,7 @@ public class FileCopyController implements FileCopyStatusReciever {
 		this.externalOffset = externalOffset;
 		this.spaceReserve = spaceReserve; 
 		this.maxIgnoredSpace = maxIgnoredSpace;
-		log = Logger.getLogger("FileCopyController");
+		log = LogHandler.getLogger();
 	}
 
 	
@@ -132,7 +132,7 @@ public class FileCopyController implements FileCopyStatusReciever {
 		} else {
 			errorcount++;
 			stopped = true;
-			log.severe("Unkown Worker returned ["+fcw.getSrc().getAbsolutePath()+"]");
+			log.severe("Unkown Worker returned ["+fcw.getSrc().getAbsolutePath()+"] CurrInt:["+internalFcw.getSrc().getAbsolutePath()+"] CurrExt:[\"+externalFcw.getSrc().getAbsolutePath()+\"]");
 			return;
 		}
 		if (statusCode == 0){

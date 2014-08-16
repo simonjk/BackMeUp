@@ -17,7 +17,7 @@ public class H2EmbeddedConnector implements DBConnector {
 
 	private Connection con;
 	private boolean active = false;
-	private Logger log = Logger.getLogger("main");
+	private Logger log = LogHandler.getLogger();
 	
 	@Override
 	public boolean open(String ConnectString) {

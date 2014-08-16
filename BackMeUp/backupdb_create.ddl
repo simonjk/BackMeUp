@@ -29,6 +29,8 @@ CREATE TABLE  backupitems (
   lastmodified bigint DEFAULT NULL
 );
 
+Create index unmodifiedItems on backupitems(path, size, lastmodified);
+
 CREATE TABLE  runs (
   id integer NOT NULL AUTO_INCREMENT Primary Key,
   backupgroup_id integer DEFAULT NULL,

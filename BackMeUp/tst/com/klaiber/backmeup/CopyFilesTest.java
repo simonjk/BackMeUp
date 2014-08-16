@@ -5,11 +5,11 @@ import static org.junit.Assert.*;
 import java.util.Set;
 
 import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.runners.MethodSorters;
+//import org.junit.FixMethodOrder;
+//import org.junit.runners.MethodSorters;
 import org.junit.Test;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+//@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CopyFilesTest {
 
 	private static DBConnector con;

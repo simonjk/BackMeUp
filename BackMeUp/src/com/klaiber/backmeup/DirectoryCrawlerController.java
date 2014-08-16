@@ -10,7 +10,7 @@ public class DirectoryCrawlerController {
 	private int activeThreads = 0;	
 	private LinkedList<String> dirs;
 	private long added = 0;
-	private Logger log = Logger.getLogger("main");
+	private Logger log = LogHandler.getLogger();
 	
 	DirectoryCrawlerController(DBConnector dbConnector, int maxThreads){
 		connect = dbConnector;
@@ -27,7 +27,7 @@ public class DirectoryCrawlerController {
 	public long crawl(String directory, boolean recursive, int run){
 		
 		dirs.add(directory);
-		//log.info("Crawling directory ["+directory+"]" );
+		log.info("Crawling directory ["+directory+"]" );
 		while (dirs.size()>0 || activeThreads > 0)	{
 			if (dirs.size()>0 && maxThreads > activeThreads) {
 				Thread t = new Thread(new DirectoryCrawlerWorker(run, dirs.poll(), recursive, this, connect));

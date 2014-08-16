@@ -31,7 +31,7 @@ import org.apache.commons.io.FileUtils;
 
 public class FileCopyWorker implements Runnable {
 	
-	private Logger log = Logger.getLogger("FileCopyWorker");
+	private Logger log = LogHandler.getLogger();
 	
 	private File src;
 	private File drive;
@@ -98,8 +98,17 @@ public class FileCopyWorker implements Runnable {
 		//Check if target exists
 		if (tgtdir.isDirectory()) {
 			if (tgt.exists())  {
-				statusReciever.returnFinished(this, 5);
-				return;
+				String tgtHash = BackupItem.generateHashForFile(tgt.getAbsolutePath());		
+				if (!tgtHash.equalsIgnoreCase(hash)){
+					log.info("File ["+tgt.getAbsolutePath()+"] already but had wrong hash ["+tgtHash+"]");
+					statusReciever.returnFinished(this, 5);
+					return;
+					
+				} else {
+					log.info("File ["+tgt.getAbsolutePath()+"] already existed and was identically");
+					statusReciever.returnFinished(this, 0);
+					return;
+				}
 			}
 		} else {
 			//create tgt dir
