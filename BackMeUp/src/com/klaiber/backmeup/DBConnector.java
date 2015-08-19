@@ -47,11 +47,15 @@ public interface DBConnector {
 	
 	public Set<BackupItem> getUnsavedItems(int run, boolean external);
 	
+	public Set<BackupItem> getSavedItems(int run, boolean external);
+	
 	public boolean setItemSaved(BackupItem item, String driveName, boolean external);
 	
 	public boolean setItemSaved(BackupItem item, int drive, boolean external);
 	
 	public String getXmlRepresentation(int run);
+	
+	public String getDriveName(int drive);
 	
 
 }

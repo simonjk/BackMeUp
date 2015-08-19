@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
@@ -13,7 +14,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
-public class H2EmbeddedConnector implements DBConnector {
+public class MySQLConnector implements DBConnector {
 
 	private Connection con;
 	private boolean active = false;
@@ -22,9 +23,10 @@ public class H2EmbeddedConnector implements DBConnector {
 	@Override
 	public boolean open(String ConnectString) {
 		try{
-			Class.forName("org.h2.Driver");
-			con = DriverManager.getConnection(ConnectString, "", "");			
+			Class.forName("com.mysql.jdbc.Driver");
+			con = DriverManager.getConnection(ConnectString, "usr", "pwd");			
 		} catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		}
 		active = true;
@@ -81,7 +83,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	public int createRun(int group) {
 		int result = -1;
 		try {
-			PreparedStatement stmt = con.prepareStatement("INSERT INTO RUNS (BACKUPGROUP_ID, TIME_STARTED) VALUES (?, ?)");
+			PreparedStatement stmt = con.prepareStatement("INSERT INTO RUNS (BACKUPGROUP_ID, TIME_STARTED) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
 			stmt.setInt(1, group);
 			stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
 			stmt.execute();
@@ -92,8 +94,9 @@ public class H2EmbeddedConnector implements DBConnector {
 			generatedKeys.close();
 			stmt.close();
 		} catch ( Exception e) {
+			e.printStackTrace();
 			return -1;
-		}
+		}		
 		return result;
 	}
 
@@ -101,7 +104,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	public Run getRun(int run) {		
 		Run result = null;
 		try {
-			PreparedStatement stmt = con.prepareStatement("Select * from runs where id = ?");
+			PreparedStatement stmt = con.prepareStatement("Select * from RUNS where id = ?");
 			stmt.setInt(1, run);
 			ResultSet rs = stmt.executeQuery();			
 			if (rs.next()) {
@@ -118,7 +121,8 @@ public class H2EmbeddedConnector implements DBConnector {
 			stmt.close();
 
 			
-		} catch (Exception ex) {
+		} catch (Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 		
@@ -194,9 +198,9 @@ public class H2EmbeddedConnector implements DBConnector {
 	public long checkForUnmodifiedFiles(int run) {
 		long result = 0;
 		try {
-			
+			log.info("Checking for Unmodified Files");
 			//Find run to compare to
-			int comparerun = -1;
+			/*int comparerun = -1;
 			PreparedStatement stmt = con.prepareStatement("SELECT ID FROM RUNS WHERE BACKUPGROUP_ID in (SELECT BACKUPGROUP_ID FROM RUNS WHERE ID =?) AND TIME_FINISHED IS NOT NULL and SUCESSFUL = true order by TIME_FINISHED DESC LIMIT 1");
 			stmt.setInt(1, run);
 			ResultSet rs = stmt.executeQuery();
@@ -205,21 +209,89 @@ public class H2EmbeddedConnector implements DBConnector {
 			}
 			rs.close();
 			stmt.close();
-			
+			log.info("Comparerun ["+comparerun+"]");
 			if (comparerun < 1) return -2;
+			*/
 			
-			stmt = con.prepareStatement("Select c.item_id as item_id, c.hash as hash, n.id as id from " + 
-			"(Select * from backupitems where run_id =?) as c " +
-			"inner join (Select * from backupitems where run_id =?) as n " +
-			"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified ");
+			//##############################
+			
+			/*
+			  
+			 create table NEWESRBU_1710 as
+SELECT max(b.id) as id FROM BACKUPITEMS b
+inner join RUNS r
+on r.id = b.run_id
+where r.backupgroup_id in (SELECT BACKUPGROUP_ID FROM RUNS WHERE ID = 1710)
+and r.id < 1710
+and not b.hash is null
+group by path
+
+Update BACKUPITEMS t
+inner join
+BACKUPITEMS as n
+on  t.id = n.id
+inner join BACKUPITEMS as c
+on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified
+inner join NEWESRBU_1710 x
+on c.id = x.id
+SET t.item_id = c.item_id, t.hash=c.hash
+where n.run_id = 1710
+			 
+			 
+			 */
+			
+			
+			
+			//################################
+			
+			
+			PreparedStatement stmt = con.prepareStatement("Update BACKUPITEMS t" + 
+					"inner join" + 
+					"BACKUPITEMS as n" + 
+					"on  t.id = n.id" + 
+					"inner join BACKUPITEMS as c" + 
+					"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified" + 
+					"SET t.item_id = c.item_id, t.hash=c.hash" + 
+					"where c.id in (SELECT max(b.id) FROM BACKUPITEMS b" + 
+					"inner join RUNS r" + 
+					"on r.id = b.run_id" + 
+					"where r.backupgroup_id in (SELECT BACKUPGROUP_ID FROM RUNS WHERE ID =?)" + 
+					"and r.id < ? and not (b.hash is null)" + 
+					"group by path) and n.run_id = ?");
+			stmt.setInt(1, run);
+			stmt.setInt(2, run);
+			stmt.setInt(3, run);
+			result = result + stmt.executeUpdate();
+						
+			/* old version
+			stmt = con.prepareStatement("Update BACKUPITEMS t " + 
+					"inner join " + 
+					"BACKUPITEMS as n " + 
+					"on  t.id = n.id " + 
+					"inner join BACKUPITEMS as c " + 
+					"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified " + 
+					"SET t.item_id = c.item_id, t.hash=c.hash " + 
+					"where c.run_id = ? and n.run_id = ?");
+			stmt.setInt(1, comparerun);
+			stmt.setInt(2, run);
+			result = result + stmt.executeUpdate();
+			*/
+			stmt.close();
+			
+			/*
+			 * stmt = con.prepareStatement("Select c.item_id as item_id, c.hash as hash, n.id as id " + 
+			"from BACKUPITEMS as c " +
+			"inner join BACKUPITEMS as n " +
+			"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified "+
+			"where c.run_id =? and n.run_id =?");
 			stmt.setInt(1, comparerun);
 			stmt.setInt(2, run);
 			rs = stmt.executeQuery();
 			
-			PreparedStatement stmt2 = con.prepareStatement("UPDATE backupitems SET ITEM_ID = ?, HASH = ? WHERE id = ?");
+			PreparedStatement stmt2 = con.prepareStatement("UPDATE BACKUPITEMS SET ITEM_ID = ?, HASH = ? WHERE id = ?");
 			
 			while (rs.next()){
-				
+				//log.info("Update [" + rs.getInt(1) + "]");				
 				stmt2.setInt(1, rs.getInt(1));
 				stmt2.setString(2, rs.getString(2));
 				stmt2.setInt(3, rs.getInt(3));
@@ -230,8 +302,11 @@ public class H2EmbeddedConnector implements DBConnector {
 			stmt2.close();
 			rs.close();
 			stmt.close();
+			 */
+			
 			
 		} catch ( Exception e) {
+			e.printStackTrace();
 			return -1;
 		}
 		return result;
@@ -248,9 +323,9 @@ public class H2EmbeddedConnector implements DBConnector {
 		
 		try {
 			log.info("Starting Insert of new Items");
-			PreparedStatement stmt = con.prepareStatement("Insert into items(backupgroup_id, hash) " +
-					"SELECT ? as backupgroup_id, hash from backupitems " +
-					"where run_id = ? and (ITEM_ID is null or ITEM_ID = 0) " );
+			PreparedStatement stmt = con.prepareStatement("Insert into ITEMS(backupgroup_id, hash) " +
+					"SELECT ? as backupgroup_id, hash from BACKUPITEMS " +
+					"where run_id = ? and (ITEM_ID is null or ITEM_ID = 0) and not HASH is null " );
 			stmt.setInt(1, r.getBackupgroup());
 			stmt.setInt(2, r.getId());
 			
@@ -276,16 +351,28 @@ public class H2EmbeddedConnector implements DBConnector {
 		try {
 					
 			//search for matching hashes and add Item_id if found
-			log.info("Strarting Match on Hash");
-			PreparedStatement stmt = con.prepareStatement("Select b.id as bid, i.id as iid from " +
-					"items i " +
-					"inner join backupitems b " +
+			log.info("Starting Match on Hash");
+			PreparedStatement stmt = con.prepareStatement("UPDATE BACKUPITEMS t " + 
+					"inner join BACKUPITEMS b " + 
+					"on t.id = b.id " + 
+					"inner join ITEMS i " + 
+					"on i.hash = b.hash " + 
+					"SET b.ITEM_ID = i.id " + 
+					"where i.backupgroup_id = ? and (b.ITEM_ID is null or b.ITEM_ID = 0)");
+			stmt.setInt(1, run.getBackupgroup());
+			result = result + stmt.executeUpdate();
+			stmt.close();
+			
+			/*
+			 * PreparedStatement stmt = con.prepareStatement("Select b.id as bid, i.id as iid from " +
+					"ITEMS i " +
+					"inner join BACKUPITEMS b " +
 					"on i.hash = b.hash " +
 					"where i.backupgroup_id = ? and (b.ITEM_ID is null or b.ITEM_ID = 0) ");
 			stmt.setInt(1, run.getBackupgroup());
 			ResultSet rs = stmt.executeQuery();
 			
-			PreparedStatement stmt2 = con.prepareStatement("UPDATE backupitems SET ITEM_ID = ? WHERE id = ?");
+			PreparedStatement stmt2 = con.prepareStatement("UPDATE BACKUPITEMS SET ITEM_ID = ? WHERE id = ?");
 			
 			while (rs.next()){
 				
@@ -299,8 +386,7 @@ public class H2EmbeddedConnector implements DBConnector {
 			stmt2.close();
 			rs.close();
 			stmt.close();
-			
-			
+			 */
 			
 		} catch ( Exception e) {
 			e.printStackTrace();
@@ -316,8 +402,8 @@ public class H2EmbeddedConnector implements DBConnector {
 		try {
 			Run r = getRun(run);
 			PreparedStatement stmt = con.prepareStatement("Select min(b.id), max(b.run_id), b.item_ID, min(b.path), "+
-														  "i.hash, min(b.filesize) as filesize, min(b.lastmodified), i.drive1_id, "+
-														  "i.drive2_id from Backupitems b inner join items i "+
+														  "i.hash, min(b.filesize) as size, min(b.lastmodified), i.drive1_id, "+
+														  "i.drive2_id from BACKUPITEMS b inner join ITEMS i "+
 														  "on (b.item_id = i.id) where backupgroup_id = "
 														  + "? and Drive"+(external?2:1)+"_ID is null "+
 														  "group by i.hash having max(run_id)=? order by filesize desc");
@@ -364,10 +450,10 @@ public class H2EmbeddedConnector implements DBConnector {
 		try {
 			Run r = getRun(run);
 			PreparedStatement stmt = con.prepareStatement("Select b.id, b.run_id, b.item_ID, b.path, "+
-														  "i.hash, b.filesize as filesize, b.lastmodified, i.drive1_id, "+
-														  "i.drive2_id from Backupitems b inner join items i "+
+														  "i.hash, b.filesize as size, b.lastmodified, i.drive1_id, "+
+														  "i.drive2_id from BACKUPITEMS b inner join ITEMS i "+
 														  "on (b.item_id = i.id) where backupgroup_id = "
-														  + "? and b.run_id=?and Drive"+(external?2:1)+"_ID not is null "+
+														  + "? and b.run_id=? and not Drive"+(external?2:1)+"_ID is null "+
 														  "order by Drive"+(external?2:1)+"_ID asc, filesize desc");
 			stmt.setInt(1, r.getBackupgroup());
 			stmt.setInt(2, run);
@@ -411,7 +497,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	@Override
 	public boolean setItemSaved(BackupItem item, String driveName, boolean external) {
 		try {
-			PreparedStatement stmt = con.prepareStatement("Select id from drives where name = ?");
+			PreparedStatement stmt = con.prepareStatement("Select id from DRIVES where name = ?");
 			stmt.setString(1, driveName);
 			ResultSet rs = stmt.executeQuery();			
 			if (rs.next()) {
@@ -429,7 +515,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	@Override
 	public boolean setItemSaved(BackupItem item, int drive, boolean external) {
 		try {
-			PreparedStatement stmt = con.prepareStatement("UPDATE items SET Drive"+(external?2:1)+"_ID = ? WHERE id = ?");
+			PreparedStatement stmt = con.prepareStatement("UPDATE ITEMS SET Drive"+(external?2:1)+"_ID = ? WHERE id = ?");
 			stmt.setInt(1, drive);
 			stmt.setInt(2,item.getItem_id());
 			int result = stmt.executeUpdate();
@@ -446,7 +532,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	public Set<BackupItem> getUnhashedItems(int run) {
 		Set<BackupItem> result = new HashSet<BackupItem>();
 		try {
-			PreparedStatement stmt = con.prepareStatement("Select * from backupitems where run_id = ? and item_id is null");
+			PreparedStatement stmt = con.prepareStatement("Select * from BACKUPITEMS where run_id = ? and item_id is null");
 			stmt.setInt(1, run);
 			ResultSet rs = stmt.executeQuery();
 			while (rs.next()) {
@@ -456,7 +542,7 @@ public class H2EmbeddedConnector implements DBConnector {
 			    if (rs.wasNull()) item_id = null;
 			    String path = rs.getString("PATH");
 			    String hash = rs.getString("HASH");
-			    long size = rs.getLong("SIZE");
+			    long size = rs.getLong("FILESIZE");
 			    long lastModified = rs.getLong("LASTMODIFIED");
 			    BackupItem bi = new BackupItem(this,id,run_id,item_id,path,hash,size,lastModified,null,null);
 			    result.add(bi);
@@ -465,7 +551,8 @@ public class H2EmbeddedConnector implements DBConnector {
 			stmt.close();
 
 			
-		} catch (Exception ex) {
+		} catch (Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 		
@@ -476,7 +563,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	public String getDriveName(int drive) {
 		String result = "";
 		try {
-			PreparedStatement stmt = con.prepareStatement("Select name from drives where id = ?");
+			PreparedStatement stmt = con.prepareStatement("Select name from DRIVES where id = ?");
 			stmt.setInt(1, drive);
 			ResultSet rs = stmt.executeQuery();			
 			if (rs.next()) {
@@ -498,7 +585,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	@Override
 	public boolean setBackupItemHash(BackupItem backupItem) {
 		try {
-			PreparedStatement stmt = con.prepareStatement("UPDATE backupitems SET HASH = ? WHERE id = ?");
+			PreparedStatement stmt = con.prepareStatement("UPDATE BACKUPITEMS SET HASH = ? WHERE id = ?");
 			stmt.setString(1, backupItem.getHash());
 			stmt.setInt(2, backupItem.getId());
 			int result = stmt.executeUpdate();
@@ -539,7 +626,7 @@ public class H2EmbeddedConnector implements DBConnector {
 	@Override
 	public int setDriveFull(String driveName) {
 		try {
-			PreparedStatement stmt = con.prepareStatement("UPDATE drives SET drivefull = true WHERE name = ?");
+			PreparedStatement stmt = con.prepareStatement("UPDATE DRIVES SET drivefull = true WHERE name = ?");
 			stmt.setString(1, driveName);
 			int result = stmt.executeUpdate();
 			if (result != 1) return -1;
@@ -563,12 +650,12 @@ public class H2EmbeddedConnector implements DBConnector {
 		try {
 		
 			PreparedStatement stmt = con.prepareStatement("Select b.path, b.hash, b.filesize, b.lastmodified, d1.name, d2.name "
-															+ "from backupitems b "
-															+ "inner join items i "
+															+ "from BACKUPITEMS b "
+															+ "inner join ITEMS i "
 															+ "on (b.item_id = i.id) "
-															+ "inner join drives d1 "
+															+ "inner join DRIVES d1 "
 															+ "on (i.drive1_id = d1.id) "
-															+ "inner join drives d2 "
+															+ "inner join DRIVES d2 "
 															+ "on (i.drive2_id = d2.id) "
 															+ "where b.run_id = ? "
 															+ "order by path");

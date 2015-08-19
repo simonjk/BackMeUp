@@ -41,6 +41,8 @@ public class FileCopyController implements FileCopyStatusReciever {
 			LinkedHashSet<String> externalDrives, String internalDrivePath,
 			String externalDrivePath, int externalOffset, long spaceReserve, long maxIgnoredSpace) {
 		super();
+		log = LogHandler.getLogger();
+		log.info("Initializing FCC");
 		this.con = con;
 		InternalItems = internalItems;
 		ExternalItems = externalItems;
@@ -51,7 +53,14 @@ public class FileCopyController implements FileCopyStatusReciever {
 		this.externalOffset = externalOffset;
 		this.spaceReserve = spaceReserve; 
 		this.maxIgnoredSpace = maxIgnoredSpace;
-		log = LogHandler.getLogger();
+		log.info("Checking Smallest file");
+		long smallestFile = biggestSmallestBackUpItem();
+		//System.out.println("smallest: " + smallestFile);
+		//System.out.println("max: " + this.maxIgnoredSpace);
+		if (smallestFile > this.maxIgnoredSpace) this.maxIgnoredSpace = smallestFile;
+		//System.out.println("maxafter: " + this.maxIgnoredSpace);
+		log.info("Init of FCC finished");
+		
 	}
 
 	
@@ -120,8 +129,7 @@ public class FileCopyController implements FileCopyStatusReciever {
 			driveNames = InternalDrives;
 			internalBui = null;
 			skipped = InternalSkippedItems;
-		} else if (fcw == externalFcw)
-		if (statusCode == 0){
+		} else if (fcw == externalFcw) {
 			external = true;
 			externalFcw = null;
 			externalRunning = false;
@@ -131,14 +139,12 @@ public class FileCopyController implements FileCopyStatusReciever {
 			skipped = ExternalSkippedItems;
 		} else {
 			errorcount++;
-			stopped = true;
-			log.severe("Unkown Worker returned ["+fcw.getSrc().getAbsolutePath()+"] CurrInt:["+internalFcw.getSrc().getAbsolutePath()+"] CurrExt:[\"+externalFcw.getSrc().getAbsolutePath()+\"]");
+			//stopped = true;
 			return;
 		}
 		if (statusCode == 0){
 			con.setItemSaved(bui, fcw.getDriveName(), external);
-			log.info("Successful saved  ["+fcw.getSrc().getAbsolutePath()+"] to ["+fcw.getDriveName()+"] as ["+(external?"External":"Internal")+"]. Status Code:["+statusCode+"]");
-			
+			log.info("Successful saved  ["+fcw.getSrc().getAbsolutePath()+"] to ["+fcw.getDriveName()+"] as ["+(external?"External":"Internal")+"]. Status Code:["+statusCode+"]");			
 		} else if (statusCode == 3 || statusCode == 4){
 			skipped.add(bui);
 			log.info("Not enough Space when saving ["+fcw.getSrc().getAbsolutePath()+"] to ["+fcw.getDriveName()+"] as ["+(external?"External":"Internal")+"] skipping File. Status Code:["+statusCode+"]");
@@ -155,6 +161,8 @@ public class FileCopyController implements FileCopyStatusReciever {
 				con.setDriveFull(fcw.getDriveName());
 				
 			}
+		} else if (statusCode == 1 || statusCode == 2) {
+			log.warning("Error backup ["+fcw.getSrc().getAbsolutePath()+"] to ["+fcw.getDriveName()+"] as ["+(external?"External":"Internal")+"] Status Code:["+statusCode+"]");
 		} else {
 			errorcount++;
 			log.warning("Error backup ["+fcw.getSrc().getAbsolutePath()+"] to ["+fcw.getDriveName()+"] as ["+(external?"External":"Internal")+"] Status Code:["+statusCode+"]");
@@ -175,6 +183,30 @@ public class FileCopyController implements FileCopyStatusReciever {
 		return;		
 	}
 
+	private long smallestBackUpItem(){
+		long i = smallestBackUpItem(InternalItems);
+		long e = smallestBackUpItem(ExternalItems);
+		return i<e ? i : e;
+	}
+
+	private long biggestSmallestBackUpItem(){
+		long i = smallestBackUpItem(InternalItems);
+		long e = smallestBackUpItem(ExternalItems);
+		if (i == Long.MAX_VALUE) return e;		
+		if (e == Long.MAX_VALUE) return i;	
+		return i>e ? i : e;
+	}
+	
+	private long smallestBackUpItem(LinkedHashSet<BackupItem> items){
+		if (items == null || items.size()==0)  return Long.MAX_VALUE; 
+		long res = Long.MAX_VALUE;
+		for(BackupItem bui : items){
+			if (bui.getSize() < res) res = bui.getSize();
+		}
+		return res;
+	}
+	
+	
 
 
 }

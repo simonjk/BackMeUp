@@ -93,7 +93,7 @@ public class FileCopyWorker implements Runnable {
 			return;
 		}
 		//build target filename
-		File tgtdir = new File (drive.getAbsolutePath()+"/"+hash.substring(0, 2)+"/"+hash.substring(0, 4)+"/"+hash.substring(0, 6)+"/"+hash.substring(0, 8));
+		File tgtdir = new File (drive.getAbsolutePath()+"/"+hash.substring(0, 2)+"/"+hash.substring(0, 4)+((hash.startsWith("com")||hash.startsWith("lpt"))?"_":"")+"/"+hash.substring(0, 6)+"/"+hash.substring(0, 8));
 		File tgt = new File(tgtdir.getAbsolutePath()+"/"+hash);
 		//Check if target exists
 		if (tgtdir.isDirectory()) {
@@ -124,6 +124,7 @@ public class FileCopyWorker implements Runnable {
 		try {
 			FileUtils.copyFile(src, tgt);
 		} catch (IOException e){
+			log.warning(e.getMessage());
 			statusReciever.returnFinished(this, 6);
 			return;
 		}
@@ -183,6 +184,8 @@ public class FileCopyWorker implements Runnable {
 		long rem_space = drive.getFreeSpace();
 		if (rem_space - size < space_reserve){
 			if (size > max_ignored_space) {
+				//System.out.println("Size: " + size);
+				//System.out.println("maxig: " + max_ignored_space);
 				return -3;
 			} else {
 				return -4;

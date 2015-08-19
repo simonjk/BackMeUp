@@ -19,6 +19,9 @@ CREATE TABLE  items (
   drive2_id integer DEFAULT NULL
 );
 
+Create index itm_hash_idx on items(hash);
+Create index itm_bug_idx on items(backupgroup_id);
+
 CREATE TABLE  backupitems (
   id integer NOT NULL AUTO_INCREMENT primary key,
   run_id integer DEFAULT NULL,
@@ -30,6 +33,8 @@ CREATE TABLE  backupitems (
 );
 
 Create index unmodifiedItems on backupitems(path, size, lastmodified);
+Create index bu_item_id_idx on backupitems(item_id);
+Create index bu_hash_idx on backupitems(hash);
 
 CREATE TABLE  runs (
   id integer NOT NULL AUTO_INCREMENT Primary Key,
