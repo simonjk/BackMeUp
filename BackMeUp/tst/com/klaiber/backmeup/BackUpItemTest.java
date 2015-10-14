@@ -2,7 +2,6 @@ package com.klaiber.backmeup;
 
 import static org.junit.Assert.*;
 
-import java.math.BigInteger;
 
 import org.junit.Test;
 

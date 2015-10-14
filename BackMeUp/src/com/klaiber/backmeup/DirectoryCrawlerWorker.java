@@ -10,7 +10,7 @@ public class DirectoryCrawlerWorker implements Runnable {
 	private DirectoryCrawlerController control;
 	private DBConnector connect;
 	private int run;
-	private Logger log = log = LogHandler.getLogger();
+	private Logger log = LogHandler.getLogger();
 	
 	@Override
 	public void run() {

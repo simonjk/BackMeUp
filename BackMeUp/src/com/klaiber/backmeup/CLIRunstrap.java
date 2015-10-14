@@ -1,13 +1,9 @@
 package com.klaiber.backmeup;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream.GetField;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.logging.FileHandler;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import org.apache.commons.io.FileUtils;
 

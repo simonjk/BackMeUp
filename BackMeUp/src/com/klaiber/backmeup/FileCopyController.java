@@ -182,13 +182,14 @@ public class FileCopyController implements FileCopyStatusReciever {
 		fcw.continueProcess();
 		return;		
 	}
-
+/*
 	private long smallestBackUpItem(){
 		long i = smallestBackUpItem(InternalItems);
 		long e = smallestBackUpItem(ExternalItems);
 		return i<e ? i : e;
 	}
-
+*/
+	
 	private long biggestSmallestBackUpItem(){
 		long i = smallestBackUpItem(InternalItems);
 		long e = smallestBackUpItem(ExternalItems);
