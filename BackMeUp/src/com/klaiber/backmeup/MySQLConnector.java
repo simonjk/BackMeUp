@@ -199,110 +199,34 @@ public class MySQLConnector implements DBConnector {
 		long result = 0;
 		try {
 			log.info("Checking for Unmodified Files");
-			//Find run to compare to
-			/*int comparerun = -1;
-			PreparedStatement stmt = con.prepareStatement("SELECT ID FROM RUNS WHERE BACKUPGROUP_ID in (SELECT BACKUPGROUP_ID FROM RUNS WHERE ID =?) AND TIME_FINISHED IS NOT NULL and SUCESSFUL = true order by TIME_FINISHED DESC LIMIT 1");
-			stmt.setInt(1, run);
-			ResultSet rs = stmt.executeQuery();
-			if (rs.next()) {
-			    comparerun = rs.getInt(1);
-			}
-			rs.close();
-			stmt.close();
-			log.info("Comparerun ["+comparerun+"]");
-			if (comparerun < 1) return -2;
-			*/
-			
-			//##############################
-			
-			/*
-			  
-			 create table NEWESRBU_1710 as
-SELECT max(b.id) as id FROM BACKUPITEMS b
-inner join RUNS r
-on r.id = b.run_id
-where r.backupgroup_id in (SELECT BACKUPGROUP_ID FROM RUNS WHERE ID = 1710)
-and r.id < 1710
-and not b.hash is null
-group by path
-
-Update BACKUPITEMS t
-inner join
-BACKUPITEMS as n
-on  t.id = n.id
-inner join BACKUPITEMS as c
-on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified
-inner join NEWESRBU_1710 x
-on c.id = x.id
-SET t.item_id = c.item_id, t.hash=c.hash
-where n.run_id = 1710
-			 
-			 
-			 */
-			
-			
-			
-			//################################
-			
-			
-			PreparedStatement stmt = con.prepareStatement("Update BACKUPITEMS t" + 
-					"inner join" + 
-					"BACKUPITEMS as n" + 
-					"on  t.id = n.id" + 
-					"inner join BACKUPITEMS as c" + 
-					"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified" + 
-					"SET t.item_id = c.item_id, t.hash=c.hash" + 
-					"where c.id in (SELECT max(b.id) FROM BACKUPITEMS b" + 
-					"inner join RUNS r" + 
-					"on r.id = b.run_id" + 
-					"where r.backupgroup_id in (SELECT BACKUPGROUP_ID FROM RUNS WHERE ID =?)" + 
-					"and r.id < ? and not (b.hash is null)" + 
-					"group by path) and n.run_id = ?");
+	
+			PreparedStatement stmt = con.prepareStatement("create table NEWESTBU_"+run+" as "+
+					"SELECT max(b.id) as id FROM BACKUPITEMS b "+
+					"inner join RUNS r "+
+					"on r.id = b.run_id "+
+					"where r.backupgroup_id in (SELECT BACKUPGROUP_ID FROM RUNS WHERE ID = ?) "+					
+					"and r.id < ? "+
+					"and not b.hash is null "+
+					"group by path");
 			stmt.setInt(1, run);
 			stmt.setInt(2, run);
-			stmt.setInt(3, run);
-			result = result + stmt.executeUpdate();
-						
-			/* old version
-			stmt = con.prepareStatement("Update BACKUPITEMS t " + 
-					"inner join " + 
-					"BACKUPITEMS as n " + 
-					"on  t.id = n.id " + 
-					"inner join BACKUPITEMS as c " + 
-					"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified " + 
-					"SET t.item_id = c.item_id, t.hash=c.hash " + 
-					"where c.run_id = ? and n.run_id = ?");
-			stmt.setInt(1, comparerun);
-			stmt.setInt(2, run);
-			result = result + stmt.executeUpdate();
-			*/
+			stmt.execute();
+			
+			stmt = con.prepareStatement("Update BACKUPITEMS t "+
+					"inner join " +
+					"BACKUPITEMS as n " +
+					"on  t.id = n.id " +
+					"inner join BACKUPITEMS as c " +
+					"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified " +
+					"inner join NEWESTBU_"+run+" x " +
+					"on c.id = x.id " +
+					"SET t.item_id = c.item_id, t.hash=c.hash " +
+					"where n.run_id = ?");
+			stmt.setInt(1, run);
+			result = result + stmt.executeUpdate();						
 			stmt.close();
 			
-			/*
-			 * stmt = con.prepareStatement("Select c.item_id as item_id, c.hash as hash, n.id as id " + 
-			"from BACKUPITEMS as c " +
-			"inner join BACKUPITEMS as n " +
-			"on c.path = n.path and c.FILESIZE = n.FILESIZE and c.lastmodified = n.lastmodified "+
-			"where c.run_id =? and n.run_id =?");
-			stmt.setInt(1, comparerun);
-			stmt.setInt(2, run);
-			rs = stmt.executeQuery();
-			
-			PreparedStatement stmt2 = con.prepareStatement("UPDATE BACKUPITEMS SET ITEM_ID = ?, HASH = ? WHERE id = ?");
-			
-			while (rs.next()){
-				//log.info("Update [" + rs.getInt(1) + "]");				
-				stmt2.setInt(1, rs.getInt(1));
-				stmt2.setString(2, rs.getString(2));
-				stmt2.setInt(3, rs.getInt(3));
-				result = result + stmt2.executeUpdate();
-				stmt2.clearParameters();
-			}
-			
-			stmt2.close();
-			rs.close();
-			stmt.close();
-			 */
+		
 			
 			
 		} catch ( Exception e) {
@@ -311,6 +235,46 @@ where n.run_id = 1710
 		}
 		return result;
 
+	}
+
+	@Override
+	public String[] getFileFilters(int group) {
+		Set<String> result = new HashSet<String>();
+		try {
+			PreparedStatement stmt = con.prepareStatement("Select expression from FILTERS where (BACKUPGROUP_ID = ? OR BACKUPGROUP_ID is null) and file = 1");
+			stmt.setInt(1, group);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()){
+				result.add(rs.getString(1));
+				System.out.println(rs.getString(1));
+			}
+			rs.close();
+			stmt.close();
+		} catch ( Exception e) {
+			return new String[0];
+		}				
+		
+		return result.toArray(new String[result.size()]);
+	}
+
+	@Override
+	public String[] getDirFilters(int group) {
+		Set<String> result = new HashSet<String>();
+		try {
+			PreparedStatement stmt = con.prepareStatement("Select expression from FILTERS where (BACKUPGROUP_ID = ? OR BACKUPGROUP_ID is null) and dir = 1");
+			stmt.setInt(1, group);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()){
+				result.add(rs.getString(1));
+				System.out.println(rs.getString(1));
+			}
+			rs.close();
+			stmt.close();
+		} catch ( Exception e) {
+			return new String[0];
+		}				
+		
+		return result.toArray(new String[result.size()]);
 	}
 
 	@Override

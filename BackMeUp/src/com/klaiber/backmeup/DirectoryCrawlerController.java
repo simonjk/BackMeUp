@@ -17,8 +17,9 @@ public class DirectoryCrawlerController {
 	private long added = 0;
 	private Logger log = LogHandler.getLogger();
 	private Set<String> activeDirs = Collections.newSetFromMap(new ConcurrentHashMap<String,Boolean>());
+
 	
-	DirectoryCrawlerController(DBConnector dbConnector, int maxThreads){
+	DirectoryCrawlerController(DBConnector dbConnector, int maxThread){
 		connect = dbConnector;
 		if (maxThreads < 1) {
 			this.maxThreads = 1;
@@ -27,6 +28,7 @@ public class DirectoryCrawlerController {
 			this.maxThreads = maxThreads;
 		}
 		dirs = new LinkedList<String>();
+
 	}
 	
 	

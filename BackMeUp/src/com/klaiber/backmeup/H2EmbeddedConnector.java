@@ -15,6 +15,18 @@ import java.util.logging.Logger;
 
 public class H2EmbeddedConnector implements DBConnector {
 
+	@Override
+	public String[] getFileFilters(int group) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String[] getDirFilters(int group) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	private Connection con;
 	private boolean active = false;
 	private Logger log = LogHandler.getLogger();

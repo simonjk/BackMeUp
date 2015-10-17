@@ -57,5 +57,9 @@ public interface DBConnector {
 	
 	public String getDriveName(int drive);
 	
+	public String[] getFileFilters(int group);
+	
+	public String[] getDirFilters(int group);
+	
 
 }
