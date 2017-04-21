@@ -95,24 +95,7 @@ public class FileCopyWorker implements Runnable {
 		File tgtdir = new File (drive.getAbsolutePath()+"/"+hash.substring(0, 2)+"/"+hash.substring(0, 4)+((hash.startsWith("com")||hash.startsWith("lpt"))?"_":"")+"/"+hash.substring(0, 6)+"/"+hash.substring(0, 8));
 		File tgt = new File(tgtdir.getAbsolutePath()+"/"+hash);
 		//Check if target exists
-		if (tgtdir.isDirectory()) {
-			if (tgt.exists())  {
-				String tgtHash = BackupItem.generateHashForFile(tgt.getAbsolutePath());		
-				if (!tgtHash.equalsIgnoreCase(hash)){
-					log.info("File ["+tgt.getAbsolutePath()+"] already but had wrong hash ["+tgtHash+"]");
-					statusReciever.returnFinished(this, 5);
-					return;
-					
-				} else {
-					log.info("File ["+tgt.getAbsolutePath()+"] already existed and was identically");
-					statusReciever.returnFinished(this, 0);
-					return;
-				}
-			}
-		} else {
-			//create tgt dir
-			tgtdir.mkdirs();
-		}
+		if(!checkAndPrepTgtDir(tgtdir, tgt)) return;
 		
 		if (stop) {
 			statusReciever.returnFinished(this, 100);
@@ -134,6 +117,13 @@ public class FileCopyWorker implements Runnable {
 		}
 		
 		//verify tgt file
+		verifyCopiedFile(tgt);
+		return;
+
+	}
+
+	//TODO: Test Coverage
+	public void verifyCopiedFile(File tgt) {
 		String tgtHash = BackupItem.generateHashForFile(tgt.getAbsolutePath());		
 		if (!tgtHash.equalsIgnoreCase(hash)){
 			log.info("tgt Hash ["+tgtHash+"]" );
@@ -145,7 +135,29 @@ public class FileCopyWorker implements Runnable {
 			statusReciever.returnFinished(this, 0);
 			return;
 		}
+	}
 
+	//TODO: Test Coverage
+	public boolean checkAndPrepTgtDir(File tgtdir, File tgt) {
+		if (tgtdir.isDirectory()) {
+			if (tgt.exists())  {
+				String tgtHash = BackupItem.generateHashForFile(tgt.getAbsolutePath());		
+				if (!tgtHash.equalsIgnoreCase(hash)){
+					log.info("File ["+tgt.getAbsolutePath()+"] already but had wrong hash ["+tgtHash+"]");
+					statusReciever.returnFinished(this, 5);
+					return false;
+					
+				} else {
+					log.info("File ["+tgt.getAbsolutePath()+"] already existed and was identically");
+					statusReciever.returnFinished(this, 0);
+					return false;
+				}
+			} else return true;
+		} else {
+			//create tgt dir
+			tgtdir.mkdirs();
+			return true;
+		}
 	}
 	
 	public void continueProcess(){
@@ -158,7 +170,7 @@ public class FileCopyWorker implements Runnable {
 		stop = true;
 	}
 	
-	
+	// TODO: Test coverage
 	public static int checkDrive(File drive, String driveName, long size, long space_reserve, long max_ignored_space){
 		int status = 0;
 		// check if target drive is there

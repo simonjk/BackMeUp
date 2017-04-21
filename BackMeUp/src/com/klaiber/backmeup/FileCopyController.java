@@ -182,15 +182,9 @@ public class FileCopyController implements FileCopyStatusReciever {
 		fcw.continueProcess();
 		return;		
 	}
-/*
-	private long smallestBackUpItem(){
-		long i = smallestBackUpItem(InternalItems);
-		long e = smallestBackUpItem(ExternalItems);
-		return i<e ? i : e;
-	}
-*/
-	
-	private long biggestSmallestBackUpItem(){
+
+	//TODO: Test Coverage
+	public long biggestSmallestBackUpItem(){
 		long i = smallestBackUpItem(InternalItems);
 		long e = smallestBackUpItem(ExternalItems);
 		if (i == Long.MAX_VALUE) return e;		
@@ -198,7 +192,8 @@ public class FileCopyController implements FileCopyStatusReciever {
 		return i>e ? i : e;
 	}
 	
-	private long smallestBackUpItem(LinkedHashSet<BackupItem> items){
+	//TODO: Test Coverage
+	public long smallestBackUpItem(LinkedHashSet<BackupItem> items){
 		if (items == null || items.size()==0)  return Long.MAX_VALUE; 
 		long res = Long.MAX_VALUE;
 		for(BackupItem bui : items){

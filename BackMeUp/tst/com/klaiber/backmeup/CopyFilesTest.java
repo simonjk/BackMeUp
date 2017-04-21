@@ -2,6 +2,8 @@ package com.klaiber.backmeup;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Set;
 
 import org.junit.BeforeClass;
@@ -20,10 +22,20 @@ public class CopyFilesTest {
 		con = new H2EmbeddedConnector();
 		if (con.open("jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'backupdb_testdata_create.ddl'")) {
 			run1 = con.createRun(1);
-			DirectoryCrawlerController dcc = new DirectoryCrawlerController(con, 20);
-			for (String d : con.getDirectories(1)){
-				dcc.crawl(d, true, run1);
+			
+			int group = 1;
+			
+			DirectoryCrawler dc = new DirectoryCrawler(con, run1,group);
+			
+			for (String d : con.getDirectories(group)){
+				//System.out.print(d);
+				try {
+					dc.crawl(Paths.get(d), true);
+				} catch (IOException e) {					
+					e.printStackTrace();
+				}
 			}
+	
 			con.checkForUnmodifiedFiles(run1);
 			Set<BackupItem> unhashed = con.getUnhashedItems(run1);
 			for(BackupItem bi : unhashed){
